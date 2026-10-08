@@ -55,6 +55,8 @@
 // Commit: feat: responsive menu screen with adaptive breakpoints and empty state
 // =============================================================================
 
+import 'dart:math';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -337,26 +339,31 @@ class StoreHeader extends StatelessWidget {
             child: Icon(Icons.storefront, color: cs.onPrimaryContainer),
           ),
           const SizedBox(width: Gap.md),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(kStoreName, style: text.titleMedium),
-              Text(
-                kStoreHours,
-                style: text.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-              ),
-            ],
+          Expanded(flex: 5,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(kStoreName, style: text.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                Text(
+                  kStoreHours,
+                  style: text.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
           const SizedBox(width: Gap.md),
           Icon(Icons.star_rounded, size: 20, color: cs.tertiary),
           const SizedBox(width: Gap.xs),
-          Text('4.8 · 1,2 rb ulasan', style: text.labelMedium),
+          Flexible(child: Text('4.8 · 1,2 rb ulasan', style: text.labelMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
         ],
       ),
     );
   }
 }
 
+//tolong fix overflow categorybar
 class CategoryBar extends StatelessWidget {
   const CategoryBar({super.key, required this.selected, required this.onSelected});
 
@@ -365,12 +372,13 @@ class CategoryBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Gap.md),
-      child: Row(
-        children: [
-          for (final category in kCategories) ...[
-            ChoiceChip(
+    return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: Gap.md),
+        child: Row(
+          children: [
+            for (final category in kCategories) ...[
+              ChoiceChip(
               label: Text(category),
               selected: category == selected,
               onSelected: (_) => onSelected(category),
@@ -391,7 +399,8 @@ class PromoStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.all(Gap.md),
       child: Row(
         children: [
@@ -482,15 +491,16 @@ class MenuTile extends StatelessWidget {
               child: Icon(iconFor(item.category), color: cs.onSecondaryContainer),
             ),
             const SizedBox(width: Gap.md),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.name, style: text.titleMedium),
-                if (item.promo)
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(item.name, style: text.titleMedium),
+                  if (item.promo)
                   Text('Promo', style: text.labelSmall?.copyWith(color: cs.primary)),
               ],
             ),
-            const Spacer(),
+            ),
             Text(rupiah(item.price), style: text.labelLarge),
             IconButton(
               tooltip: 'Tambah',
@@ -501,8 +511,7 @@ class MenuTile extends StatelessWidget {
                 child: const Icon(Icons.add_circle_outline),
               ),
             ),
-          ],
-        ),
+        ])
       ),
     );
   }
@@ -531,17 +540,19 @@ class MenuCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 110,
-              decoration: BoxDecoration(
-                color: cs.secondaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              alignment: Alignment.center,
-              child: Icon(
-                iconFor(item.category),
-                size: 40,
-                color: cs.onSecondaryContainer,
+            Expanded(
+              child : Container(
+                height: 110,
+                decoration: BoxDecoration(
+                  color: cs.secondaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  iconFor(item.category),
+                  size: 40,
+                  color: cs.onSecondaryContainer,
+                ),
               ),
             ),
             const SizedBox(height: Gap.sm),
@@ -588,11 +599,15 @@ class CartBar extends StatelessWidget {
         children: [
           Icon(Icons.shopping_bag_outlined, color: cs.onSurfaceVariant),
           const SizedBox(width: Gap.sm),
-          Text(
-            'Pesanan: $count item · Total ${rupiah(total)}',
-            style: text.titleSmall,
+          Flexible(
+            child: Text(
+              'Pesanan: $count item · Total ${rupiah(total)}',
+              style: text.titleSmall,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          const SizedBox(width: Gap.md),
+          const SizedBox(width: Gap.sm),
           SizedBox(
             width: 160,
             child: FilledButton(
