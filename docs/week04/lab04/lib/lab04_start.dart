@@ -221,6 +221,21 @@ class _MenuScreenState extends State<MenuScreen> {
   String _query = '';
   String _category = kCategories.first;
   final Map<String, int> _qty = {};
+  final _searchController = TextEditingController(); // BARU
+
+  @override // BARU
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _resetFilters() { // BARU
+    _searchController.clear();
+    setState(() {
+      _query = '';
+      _category = kCategories.first;
+    });
+  }
 
   List<MenuItem> get _visible => widget.items.where((item) {
         final matchesQuery =
@@ -261,10 +276,10 @@ class _MenuScreenState extends State<MenuScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Menu')),
-        body: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth >= 600;
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= 600;
 
             return CustomScrollView(
               slivers: [
@@ -274,6 +289,7 @@ class _MenuScreenState extends State<MenuScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: Gap.md),
                     child: SearchBar(
                       key: const Key('search-field'),
+                      controller: _searchController, // BARU
                       hintText: 'Cari menu…',
                       leading: const Icon(Icons.search),
                       onChanged: (value) => setState(() => _query = value),
@@ -287,10 +303,19 @@ class _MenuScreenState extends State<MenuScreen> {
                     onSelected: (category) => setState(() => _category = category),
                   ),
                 ),
-                SliverToBoxAdapter(
-                  child: PromoStrip(first: promos[0], second: promos[1]),
-                ),
-                if (isWide)
+                if (promos.length >= 2) // UBAH: dulu tanpa pengaman
+                  SliverToBoxAdapter(
+                    child: PromoStrip(first: promos[0], second: promos[1]),
+                  ),
+                if (visible.isEmpty) // BARU
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: EmptyState(
+                      key: const Key('empty-state'),
+                      onReset: _resetFilters,
+                    ),
+                  )
+                else if (isWide) // UBAH: dulu "if (isWide)"
                   SliverPadding(
                     padding: const EdgeInsets.all(Gap.md),
                     sliver: SliverGrid.builder(
@@ -330,6 +355,47 @@ class _MenuScreenState extends State<MenuScreen> {
       ),
       bottomNavigationBar: SafeArea(
         child: CartBar(count: _count, total: _total, onOrder: _order),
+      ),
+    );
+  }
+}
+
+class EmptyState extends StatelessWidget {
+  const EmptyState({super.key, required this.onReset});
+
+  final VoidCallback onReset;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(Gap.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.search_off, size: 48, color: cs.onSurfaceVariant),
+            const SizedBox(height: Gap.md),
+            Text(
+              'Menu tidak ditemukan',
+              style: text.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: Gap.xs),
+            Text(
+              'Coba ubah kata kunci atau kategori.',
+              style: text.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: Gap.md),
+            FilledButton.tonal(
+              onPressed: onReset,
+              child: const Text('Tampilkan semua'),
+            ),
+          ],
+        ),
       ),
     );
   }
