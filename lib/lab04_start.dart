@@ -55,8 +55,6 @@
 // Commit: feat: responsive menu screen with adaptive breakpoints and empty state
 // =============================================================================
 
-import 'dart:math';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -260,59 +258,79 @@ class _MenuScreenState extends State<MenuScreen> {
   Widget build(BuildContext context) {
     final visible = _visible;
     final promos = widget.items.where((item) => item.promo).toList();
-    final isTablet = MediaQuery.sizeOf(context).width > 600;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Menu')),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const StoreHeader(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Gap.md),
-            child: SearchBar(
-              key: const Key('search-field'),
-              hintText: 'Cari menu…',
-              leading: const Icon(Icons.search),
-              onChanged: (value) => setState(() => _query = value),
-            ),
-          ),
-          const SizedBox(height: Gap.sm),
-          CategoryBar(
-            selected: _category,
-            onSelected: (category) => setState(() => _category = category),
-          ),
-          PromoStrip(first: promos[0], second: promos[1]),
-          Expanded(
-            child: isTablet
-                ? GridView.count(
-                    crossAxisCount: 4,
-                    padding: const EdgeInsets.all(Gap.md),
-                    mainAxisSpacing: Gap.md,
-                    crossAxisSpacing: Gap.md,
-                    children: [
-                      for (final item in visible)
-                        MenuCard(
-                          item: item,
-                          quantity: _qty[item.id] ?? 0,
-                          onAdd: () => _add(item),
-                        ),
-                    ],
-                  )
-                : ListView(
-                    children: [
-                      for (final item in visible)
-                        MenuTile(
-                          item: item,
-                          quantity: _qty[item.id] ?? 0,
-                          onAdd: () => _add(item),
-                        ),
-                    ],
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 600;
+
+            return CustomScrollView(
+              slivers: [
+                const SliverToBoxAdapter(child: StoreHeader()),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: Gap.md),
+                    child: SearchBar(
+                      key: const Key('search-field'),
+                      hintText: 'Cari menu…',
+                      leading: const Icon(Icons.search),
+                      onChanged: (value) => setState(() => _query = value),
+                    ),
                   ),
-          ),
-        ],
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: Gap.sm)),
+                SliverToBoxAdapter(
+                  child: CategoryBar(
+                    selected: _category,
+                    onSelected: (category) => setState(() => _category = category),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: PromoStrip(first: promos[0], second: promos[1]),
+                ),
+                if (isWide)
+                  SliverPadding(
+                    padding: const EdgeInsets.all(Gap.md),
+                    sliver: SliverGrid.builder(
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 240,
+                        mainAxisSpacing: Gap.md,
+                        crossAxisSpacing: Gap.md,
+                        childAspectRatio: 0.85,
+                      ),
+                      itemCount: visible.length,
+                      itemBuilder: (context, index) {
+                        final item = visible[index];
+                        return MenuCard(
+                          item: item,
+                          quantity: _qty[item.id] ?? 0,
+                          onAdd: () => _add(item),
+                        );
+                      },
+                    ),
+                  )
+                else
+                  SliverList.builder(
+                    itemCount: visible.length,
+                    itemBuilder: (context, index) {
+                      final item = visible[index];
+                      return MenuTile(
+                        item: item,
+                        quantity: _qty[item.id] ?? 0,
+                        onAdd: () => _add(item),
+                      );
+                    },
+                  ),
+              ],
+            );
+          },
+        ),
       ),
-      bottomNavigationBar: CartBar(count: _count, total: _total, onOrder: _order),
+      bottomNavigationBar: SafeArea(
+        child: CartBar(count: _count, total: _total, onOrder: _order),
+      ),
     );
   }
 }
@@ -363,7 +381,6 @@ class StoreHeader extends StatelessWidget {
   }
 }
 
-//tolong fix overflow categorybar
 class CategoryBar extends StatelessWidget {
   const CategoryBar({super.key, required this.selected, required this.onSelected});
 
@@ -442,9 +459,11 @@ class PromoCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: Gap.xs),
-              Text(
-                item.name,
-                style: text.titleMedium?.copyWith(color: cs.onTertiaryContainer),
+              Flexible(
+                child: Text(
+                  item.name,
+                  style: text.titleMedium?.copyWith(color: cs.onTertiaryContainer),
+                ),
               ),
               const Spacer(),
               Text(
@@ -542,7 +561,6 @@ class MenuCard extends StatelessWidget {
           children: [
             Expanded(
               child : Container(
-                height: 110,
                 decoration: BoxDecoration(
                   color: cs.secondaryContainer,
                   borderRadius: BorderRadius.circular(12),
@@ -556,7 +574,7 @@ class MenuCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: Gap.sm),
-            Text(item.name, style: text.titleSmall),
+            Text(item.name, style: text.titleSmall,maxLines: 2, overflow: TextOverflow.ellipsis,),
             const SizedBox(height: Gap.xs),
             Text(rupiah(item.price), style: text.bodyMedium),
             const SizedBox(height: Gap.sm),
